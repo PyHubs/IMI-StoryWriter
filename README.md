@@ -10,9 +10,9 @@ So I built my own Notepad clone, without the menubar. It is inspired from Office
 - Dark Mode
 - Minimal (since no features) UI
 - Very basic, and non distracting
+- Auto paragraph adding!!!
 - No formatting except Heading and Subtitle (l1, l2)
 
 ## Limitations
-- No formatting
-- You need to remove the \n lines on word
+- No formatting (bold/italic/underline are overrated)
 - Its a very basic notepad, but no SAVE even, only SAVE AS
