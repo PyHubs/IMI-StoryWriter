@@ -7,7 +7,7 @@ from docx import Document
 # Create a window
 win = Tk()
 win.title("IMI-StoryWriter")
-win.geometry("750x550")
+win.geometry("419x595")  # Set the geometry to A5 size in pixels
 document = Document()
 
 # Colorscbhemes
@@ -104,19 +104,66 @@ def fun_export():
         if paragraph.strip():  # Skip empty lines
             print(paragraph)
 
-            if paragraph.startswith("#"):
-                document.add_heading(paragraph.strip(), level=1)
-            elif paragraph.startswith("##"):
-                document.add_heading(paragraph.strip(), level=2)
-            elif paragraph.startswith("###"):
-                document.add_heading(paragraph.strip(), level=3)
-            elif paragraph.startswith("####"):
+            if paragraph.startswith("#####"):
                 document.add_heading(paragraph.strip(), level=4)
-            elif paragraph.startswith("#####"):
-                document.add_heading(paragraph.strip(), level=5)
+            elif paragraph.startswith("####"):
+                document.add_heading(paragraph.strip(), level=3)
+            elif paragraph.startswith("###"):
+                document.add_heading(paragraph.strip(), level=2)
+            elif paragraph.startswith("##"):
+                document.add_heading(paragraph.strip(), level=1)
+            elif paragraph.startswith("#"):
+                document.add_heading(paragraph.strip(), level=0)
             else:
-                document.add_paragraph(paragraph)
+                if paragraph != "":
+                    document.add_paragraph(paragraph)
 
+    file_path = asksaveasfilename(defaultextension=".docx")
+    document.save(file_path)
+    os.startfile(file_path)
+
+    # Clear the document
+    document = Document()
+
+# Fun publish
+def fun_pub():
+    global document
+
+    row_home.config(bg=surface)
+    row_open.config(bg=surface)
+    row_export.config(bg=accent)
+
+    # Clear the document
+    document = Document()
+
+    first_line = text.get("1.0", "1.end")
+    print("First line:", first_line)
+    document.add_heading(first_line, 0)
+
+    # Get the second line
+    second_line = text.get("2.0", "2.end")
+    document.add_heading(f"{second_line}\n", level=4)
+
+    # Get the remaining text
+    remaining_text = text.get("3.0", "end")
+    paragraphs = remaining_text.split("\n")
+    for paragraph in paragraphs:
+        if paragraph.strip():  # Skip empty lines
+            print(paragraph)
+
+            if paragraph.startswith("#####"):
+                document.add_heading(paragraph.strip(), level=4)
+            elif paragraph.startswith("####"):
+                document.add_heading(paragraph.strip(), level=3)
+            elif paragraph.startswith("###"):
+                document.add_heading(paragraph.strip(), level=2)
+            elif paragraph.startswith("##"):
+                document.add_heading(paragraph.strip(), level=1)
+            elif paragraph.startswith("#"):
+                document.add_heading(paragraph.strip(), level=0)
+            else:
+                if paragraph != "":
+                    document.add_paragraph(paragraph)
 
     file_path = asksaveasfilename(defaultextension=".docx")
     document.save(file_path)
@@ -150,6 +197,7 @@ def fun_open():
 # Home
 Label(tabbar, text=" ", bg=surface).grid(row=0, column=0)
 
+# Tab home
 tab_home = Label(tabbar, text='Home', bg=surface, fg=white, font=("Product Sans", 12))
 tab_home.grid(row=0, column=1)
 
@@ -158,6 +206,7 @@ row_home.grid(row=1, column=1, columnspan=1)
 
 tab_home.bind("<Button-1>", lambda e: fun_home())
 
+# tab Export
 tab_export = Label(tabbar, text='Export', bg=surface, fg=white, font=("Product Sans", 12))
 tab_export.grid(row=0, column=2)
 
@@ -166,6 +215,16 @@ row_export.grid(row=1, column=2, columnspan=1)
 
 tab_export.bind("<Button-1>", lambda e: fun_export())
 
+# Tab Publish
+tab_pub = Label(tabbar, text='Publish', bg=surface, fg=white, font=("Product Sans", 12))
+tab_pub.grid(row=0, column=3)
+
+row_pub = Frame(tabbar, bg=surface, width=50, height=2)
+row_pub.grid(row=1, column=3, columnspan=1)
+
+tab_export.bind("<Button-1>", lambda e: fun_pub())
+
+# Tab Open
 tab_open = Label(tabbar, text='Open', bg=surface, fg=white, font=("Product Sans", 12))
 tab_open.grid(row=0, column=3)
 
@@ -194,6 +253,23 @@ def update_word_count(event=None):
     text.tag_add("tag_second_line", "2.0", "2.end")
     text.tag_configure("tag_second_line", font=("Product Sans", 18), foreground=subcolor, justify='center')
 
+    # Iterate over each line
+    lines = text_content.split("\n")
+    for line_num, line in enumerate(lines, start=1):
+        if line.startswith("#"):
+            tag_name = f"tag_heading{line.count('#')}"
+            font_size = 24 - line.count('#') * 2  # Adjust the font size based on heading level
+            text.tag_configure(tag_name, font=("Product Sans", font_size), foreground=accent)
+            start_index = f"{line_num}.0"
+            end_index = f"{line_num}.end"
+            text.tag_add(tag_name, start_index, end_index)
+
+            # Add the corresponding heading to the document
+            heading_level = line.count('#')
+            heading_text = line.strip('#').strip()
+            document.add_heading(heading_text, level=heading_level)
+
+# Bind the update_word_count function to appropriate events
 text.bind("<<Modified>>", update_word_count)
 text.bind("<KeyRelease>", update_word_count)
 
