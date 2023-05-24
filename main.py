@@ -1,6 +1,6 @@
 from tkinter import *
 from tkinter import ttk
-from tkinter import filedialog
+from tkinter.filedialog import askopenfilename, asksaveasfilename
 import os, sv_ttk
 from docx import Document
 
@@ -10,11 +10,51 @@ win.title("IMI-StoryWriter")
 win.geometry("750x550")
 document = Document()
 
-# Colors
-bg = "#1C1C1C"
-accent = "#57C8FF"
-surface = "#2A2A2A"
-white = "white"
+# Colorscbhemes
+def get_system_preference():
+    if os.name == 'posix':  # macOS or Linux
+        # Check if Apple's NSUserDefaults exist
+        if os.system('defaults read -g AppleInterfaceStyle > /dev/null 2>&1') == 0:
+            return 'dark'  # Dark mode is enabled
+        else:
+            return 'light'  # Light mode is enabled
+    elif os.name == 'nt':  # Windows
+        # Check if the Registry key exists
+        try:
+            import winreg
+            reg_path = r'SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize'
+            reg_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, reg_path)
+            value, _ = winreg.QueryValueEx(reg_key, 'AppsUseLightTheme')
+            if value == 0:
+                return 'dark'  # Dark mode is enabled
+            else:
+                return 'light'  # Light mode is enabled
+        except Exception:
+            pass
+    return 'unknown'  # Unable to determine the system preference
+
+# Usage example
+preference = get_system_preference()
+print(f'System preference: {preference} mode')
+
+if preference == "dark":
+    sv_ttk.set_theme("dark")
+
+    bg = "#1C1C1C"
+    accent = "#57C8FF"
+    surface = "#2A2A2A"
+    white = "white"
+    subcolor = '#9FB6C6'
+
+else:
+    sv_ttk.set_theme('light')
+
+    bg = "#FAFAFA"
+    accent = "#0560B6"
+    surface = '#cfdbe3'
+    white = '#1C1C1C'
+    subcolor = '#4d5961'
+
 
 SIZE = 14
 
@@ -35,14 +75,19 @@ home_frame = Frame(root, bg=bg)
 # Home
 def fun_home():
     row_export.config(bg=surface)
+    row_open.config(bg=surface)
     row_home.config(bg=accent)
 
 # Export
 def fun_export():
     global document
-    
+
     row_home.config(bg=surface)
+    row_open.config(bg=surface)
     row_export.config(bg=accent)
+
+    # Clear the document
+    document = Document()
 
     first_line = text.get("1.0", "1.end")
     print("First line:", first_line)
@@ -57,14 +102,50 @@ def fun_export():
     paragraphs = remaining_text.split("\n")
     for paragraph in paragraphs:
         if paragraph.strip():  # Skip empty lines
-            document.add_paragraph(paragraph)
+            print(paragraph)
 
-    file_path = filedialog.asksaveasfilename(defaultextension=".docx")
+            if paragraph.startswith("#"):
+                document.add_heading(paragraph.strip(), level=1)
+            elif paragraph.startswith("##"):
+                document.add_heading(paragraph.strip(), level=2)
+            elif paragraph.startswith("###"):
+                document.add_heading(paragraph.strip(), level=3)
+            elif paragraph.startswith("####"):
+                document.add_heading(paragraph.strip(), level=4)
+            elif paragraph.startswith("#####"):
+                document.add_heading(paragraph.strip(), level=5)
+            else:
+                document.add_paragraph(paragraph)
+
+
+    file_path = asksaveasfilename(defaultextension=".docx")
     document.save(file_path)
     os.startfile(file_path)
 
     # Clear the document
     document = Document()
+
+# Open
+def fun_open():
+    global file_path
+
+    row_home.config(bg=surface)
+    row_open.config(bg=accent)
+    row_export.config(bg=surface)
+
+    file_path = askopenfilename(filetypes=[("Word Documents", "*.docx")])
+    if file_path:
+        # Clear the textbox
+        text.delete("1.0", "end")
+
+        # Read the contents of the selected Word document
+        doc = Document(file_path)
+
+        for paragraph in doc.paragraphs:
+            text.insert("end", paragraph.text + "\n\n")
+
+        # Filepath
+        root.config(title=f'IMI-StoryWriter | {file_path}')
 
 # Home
 Label(tabbar, text=" ", bg=surface).grid(row=0, column=0)
@@ -85,8 +166,17 @@ row_export.grid(row=1, column=2, columnspan=1)
 
 tab_export.bind("<Button-1>", lambda e: fun_export())
 
+tab_open = Label(tabbar, text='Open', bg=surface, fg=white, font=("Product Sans", 12))
+tab_open.grid(row=0, column=3)
+
+row_open = Frame(tabbar, bg=surface, width=50, height=2)
+row_open.grid(row=1, column=3, columnspan=1)
+
+tab_open.bind("<Button-1>", lambda e: fun_open())
+
 # Textbox
-text = Text(root, bg=bg, fg=white, selectbackground=accent, selectforeground=bg, font=("Roboto Regular", SIZE), bd=0, wrap=WORD, undo=True)
+text = Text(root, bg=bg, fg=white, selectbackground=accent, selectforeground=bg, font=("Roboto Regular", SIZE), bd=0,
+            wrap=WORD, undo=True)
 text.pack(fill='both', expand=1, pady=6, padx=6)
 
 # Word Count
@@ -102,21 +192,20 @@ def update_word_count(event=None):
     text.tag_configure("tag_first_line", font=("Product Sans", 26), foreground=accent, justify='center')
 
     text.tag_add("tag_second_line", "2.0", "2.end")
-    text.tag_configure("tag_second_line", font=("Product Sans", 18), foreground='#9FB6C6', justify='center')
+    text.tag_configure("tag_second_line", font=("Product Sans", 18), foreground=subcolor, justify='center')
 
 text.bind("<<Modified>>", update_word_count)
 text.bind("<KeyRelease>", update_word_count)
 
 # Status Bar
 status_label = Label(bar, text="Word Count: 0", bg=surface, fg=white, anchor="e", padx=10)
-status_label.pack(side="left")
+status_label.pack(side="right")
 
 # Letter Count
-letter_count_label = Label(bar, text="Letter Count: 0", bg=surface, fg=white, anchor="e", padx=10)
+letter_count_label = Label(bar, text="Letter Count: 0", bg=surface, fg=white, anchor="e", padx=5)
 letter_count_label.pack(side="right")
 
 # Execute
 if __name__ == "__main__":
-    sv_ttk.set_theme('dark')
     fun_home()
     win.mainloop()
