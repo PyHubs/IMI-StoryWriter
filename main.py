@@ -125,53 +125,6 @@ def fun_export():
     # Clear the document
     document = Document()
 
-# Fun publish
-def fun_pub():
-    global document
-
-    row_home.config(bg=surface)
-    row_open.config(bg=surface)
-    row_export.config(bg=accent)
-
-    # Clear the document
-    document = Document()
-
-    first_line = text.get("1.0", "1.end")
-    print("First line:", first_line)
-    document.add_heading(first_line, 0)
-
-    # Get the second line
-    second_line = text.get("2.0", "2.end")
-    document.add_heading(f"{second_line}\n", level=4)
-
-    # Get the remaining text
-    remaining_text = text.get("3.0", "end")
-    paragraphs = remaining_text.split("\n")
-    for paragraph in paragraphs:
-        if paragraph.strip():  # Skip empty lines
-            print(paragraph)
-
-            if paragraph.startswith("#####"):
-                document.add_heading(paragraph.strip(), level=4)
-            elif paragraph.startswith("####"):
-                document.add_heading(paragraph.strip(), level=3)
-            elif paragraph.startswith("###"):
-                document.add_heading(paragraph.strip(), level=2)
-            elif paragraph.startswith("##"):
-                document.add_heading(paragraph.strip(), level=1)
-            elif paragraph.startswith("#"):
-                document.add_heading(paragraph.strip(), level=0)
-            else:
-                if paragraph != "":
-                    document.add_paragraph(paragraph)
-
-    file_path = asksaveasfilename(defaultextension=".docx")
-    document.save(file_path)
-    os.startfile(file_path)
-
-    # Clear the document
-    document = Document()
-
 # Open
 def fun_open():
     global file_path
@@ -215,21 +168,12 @@ row_export.grid(row=1, column=2, columnspan=1)
 
 tab_export.bind("<Button-1>", lambda e: fun_export())
 
-# Tab Publish
-tab_pub = Label(tabbar, text='Publish', bg=surface, fg=white, font=("Product Sans", 12))
-tab_pub.grid(row=0, column=3)
-
-row_pub = Frame(tabbar, bg=surface, width=50, height=2)
-row_pub.grid(row=1, column=3, columnspan=1)
-
-tab_export.bind("<Button-1>", lambda e: fun_pub())
-
 # Tab Open
 tab_open = Label(tabbar, text='Open', bg=surface, fg=white, font=("Product Sans", 12))
-tab_open.grid(row=0, column=3)
+tab_open.grid(row=0, column=4)
 
 row_open = Frame(tabbar, bg=surface, width=50, height=2)
-row_open.grid(row=1, column=3, columnspan=1)
+row_open.grid(row=1, column=4, columnspan=1)
 
 tab_open.bind("<Button-1>", lambda e: fun_open())
 
